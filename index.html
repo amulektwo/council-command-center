@@ -552,5 +552,178 @@ if("serviceWorker"in navigator){try{navigator.serviceWorker.register("sw.js")}ca
 
 renderBoard("all");
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LEVIATHAN LAYER v1.1 — pure additive injection
+     Forged by Mind Leviathan, Seat 10 · June 12, 2026
+     LAW: zero edits to the original build above this line.
+     Rollback: delete this block; v1.0 stands untouched.
+     Adds: kingdom seen-meter · next-moves on flags ·
+     launcher links · Seer Edit Mode (JSON apply/export/import)
+     ═══════════════════════════════════════════════════════════ -->
+<style>
+.lv-strip{max-width:1180px;margin:0 auto 1.4rem;padding:1rem 1.2rem;background:var(--panel);
+ border:1px solid var(--line);border-radius:14px;display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap}
+.lv-big{font-family:var(--serif);font-size:2.6rem;font-weight:600;color:var(--gold-bright);line-height:1}
+.lv-big small{display:block;font-family:var(--sans);font-size:.7rem;color:var(--mut);letter-spacing:.06em;margin-top:.25rem}
+.lv-right{flex:1;min-width:230px}
+.lv-meter{height:12px;border-radius:6px;overflow:hidden;display:flex;background:var(--void2);border:1px solid var(--line)}
+.lv-meter b{display:block;height:100%}
+.lv-key{font-family:var(--mono);font-size:.62rem;color:var(--dim);margin-top:.45rem;letter-spacing:.04em}
+.lv-act{font-size:.78rem;color:var(--mut);margin:.3rem 0 0 2.1rem;padding-bottom:.2rem}
+.lv-act b{color:var(--gold);font-weight:600}
+.lv-links{margin-top:1rem;padding-top:.8rem;border-top:1px solid var(--line)}
+.lv-links .lt{font-family:var(--mono);font-size:.6rem;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem}
+.lv-lnk{display:inline-block;font-family:var(--mono);font-size:.68rem;color:var(--parch);text-decoration:none;
+ border:1px solid var(--line);background:var(--void2);padding:.35rem .7rem;border-radius:7px;margin:0 .4rem .4rem 0}
+.lv-lnk:hover{border-color:var(--gold)}
+#lvOv{position:fixed;inset:0;background:rgba(2,3,5,.7);backdrop-filter:blur(5px);display:none;z-index:90;
+ align-items:flex-end;justify-content:center}
+#lvOv.open{display:flex}
+@media(min-width:700px){#lvOv{align-items:center;padding:26px}}
+.lv-sheet{background:var(--panel);border:1px solid var(--line);width:100%;max-width:660px;max-height:88vh;
+ overflow-y:auto;border-radius:18px 18px 0 0;padding:1.4rem 1.3rem 1.8rem;position:relative;color:var(--ink)}
+@media(min-width:700px){.lv-sheet{border-radius:18px}}
+.lv-sheet h3{font-family:var(--serif);font-size:1.7rem;color:var(--gold-bright);font-weight:600}
+.lv-sheet .lv-sub{font-size:.82rem;color:var(--mut);font-style:italic;margin:.2rem 0 .9rem}
+#lvBox{width:100%;height:44vh;font-family:var(--mono);font-size:.66rem;background:var(--void2);
+ color:var(--parch);border:1px solid var(--line);border-radius:10px;padding:.8rem}
+.lv-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+.lv-btn{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;
+ padding:.55rem .9rem;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:var(--void)}
+.lv-btn.ghost{background:transparent;color:var(--gold)}
+.lv-msg{font-size:.78rem;font-style:italic;color:var(--verified);margin-top:.6rem;min-height:1.1rem}
+.lv-msg.err{color:var(--dark)}
+.lv-x{position:absolute;top:.8rem;right:.9rem;background:var(--void2);border:1px solid var(--line);
+ color:var(--mut);width:30px;height:30px;border-radius:50%;cursor:pointer}
+.lv-foot{font-family:var(--mono);font-size:.58rem;color:var(--dim);text-align:center;letter-spacing:.14em;margin:.4rem 0 1.6rem}
+</style>
+<script>
+(function(){ "use strict";
+try{
+/* ── 1 · THE SEEN METER — how much of the kingdom is verified ── */
+const W={v:1,r:.5,e:.15,u:0};
+function kingdom(){const c={v:0,r:0,e:0,u:0};let s=0,n=0;
+ MINDS.forEach(m=>Object.keys(m.f||{}).forEach(k=>{const t=(m.f[k][1]||"e").toLowerCase();
+  s+=(W[t]||0);n++;c[t]=(c[t]||0)+1}));
+ return{pct:Math.round(100*s/Math.max(n,1)),n:Math.max(n,1),c}}
+const strip=document.createElement("div");strip.className="lv-strip";strip.id="lvSeen";
+const boardEl=document.getElementById("board");
+boardEl.parentNode.insertBefore(strip,boardEl);
+function drawSeen(){const k=kingdom();
+ strip.innerHTML='<div class="lv-big">'+k.pct+'%<small>OF THE KINGDOM VERIFIED SEEN</small></div>'+
+ '<div class="lv-right"><div class="lv-meter">'+
+ '<b style="width:'+(100*(k.c.v||0)/k.n)+'%;background:var(--verified)"></b>'+
+ '<b style="width:'+(100*(k.c.r||0)/k.n)+'%;background:var(--shadow)"></b>'+
+ '<b style="width:'+(100*(k.c.e||0)/k.n)+'%;background:var(--dim)"></b></div>'+
+ '<div class="lv-key">'+(k.c.v||0)+' VERIFIED · '+(k.c.r||0)+' RECORDED · '+(k.c.e||0)+
+ ' EST. — this number climbs as recon lands</div></div>';}
+
+/* ── 2 · NEXT MOVES — every flag carries its move ── */
+const MOVES=[
+ [/roster/i,"One ruling; the whole board restructures to the single true hierarchy."],
+ [/manuscript/i,"Confirm upload state in the SOL pipeline; mark the gap or clear it."],
+ [/architecture.*option|option a vs b/i,"Pick A or B; the AIP build order follows the same day."],
+ [/scroll count/i,"Pin one number with Beta; the UMSD becomes the single source."],
+ [/domain/i,"One registrar setting — .com canonical, .org 301-redirects."],
+ [/burn ledger|reconcil/i,"One sit-down with the three figures; the true burn becomes canon."],
+ [/gnc.*conflict|triple/i,"Rule the GNC brand spec; the grep guard updates to match."],
+ [/gold hex/i,"Declare the one hex; every SOL asset greps against it forever."],
+ [/161\.20|collision/i,"Two claimants, one number — only the Seer seals."],
+ [/umsd version/i,"Name the authoritative file; the others become archive copies."],
+ [/token/i,"GitHub → Settings → Developer settings → Tokens → delete. Two minutes."],
+ [/passcode|sovereign/i,"Pick the new word; update the gated builds in one edit each."],
+ [/alpha/i,"Paste the self-status prompt in Alpha's thread; feed results to Edit Mode."],
+ [/gamma/i,"Same recon prompt, Gamma's thread; a red seat turns gold."],
+ [/beta/i,"Verify the register's sync counters against Obsidian and GitHub."],
+ [/kappa/i,"Self-status recon converts the Refiner's RECORDED facts to VERIFIED."],
+ [/chapel/i,"The directive is written — paste it into a Claude Code session and fire."],
+ [/temple|zionos/i,"cd ~/projects/zionos-temple && claude --resume"]];
+function moveFor(t){for(const[r,a]of MOVES)if(r.test(t))return a;
+ return "Awaits the Seer's seal — rule it and the kingdom moves."}
+const _renderFlags=window.renderFlags;
+window.renderFlags=function(){_renderFlags();
+ try{const list=document.getElementById("flaglist");if(!list)return;
+  const kids=[...list.children];
+  kids.forEach((el,i)=>{if(!FLAGS[i]||el.querySelector(".lv-act"))return;
+   const d=document.createElement("div");d.className="lv-act";
+   d.innerHTML="<b>Next move →</b> "+esc(moveFor(FLAGS[i].t));el.appendChild(d)});}catch(e){}};
+
+/* ── 3 · LAUNCHERS — cards become doors to the living work ── */
+const LINKS=[
+ [/leviathan/i,[["Supreme Forge (est.)","https://amulektwo.github.io/sovereignty-forge-supreme/"],
+                ["This Command Center","https://amulektwo.github.io/council-command-center/"]]],
+ [/kappa/i,[["Sovereignty Forge x7k9 (est.)","https://amulektwo.github.io/sovereignty-forge-x7k9/"]]]];
+const _openMind=window.openMind;
+window.openMind=function(id){_openMind(id);
+ try{const m=MINDS.find(x=>x.id===id);if(!m)return;
+  const hit=LINKS.find(([r])=>r.test(m.name));if(!hit)return;
+  const body=document.getElementById("mBody");
+  const div=document.createElement("div");div.className="lv-links";
+  div.innerHTML='<div class="lt">Living Works — tap to launch</div>'+
+   hit[1].map(L=>'<a class="lv-lnk" target="_blank" rel="noopener" href="'+esc(L[1])+'">↗ '+esc(L[0])+'</a>').join("");
+  body.appendChild(div);}catch(e){}};
+
+/* ── 4 · SEER EDIT MODE — new truth enters without touching code ── */
+const PK="lv_pass";function pass(){return lget(PK)||"SOVEREIGN"}
+const key=document.createElement("button");key.className="tbtn";key.id="lvKey";key.textContent="✦ Seer Key";
+const tb=document.getElementById("tablebtn");tb.parentNode.insertBefore(key,tb.nextSibling);
+const ovr=document.createElement("div");ovr.id="lvOv";
+ovr.innerHTML='<div class="lv-sheet"><button class="lv-x" id="lvX">×</button>'+
+ '<h3>The Living Ledger</h3><div class="lv-sub">Edit the JSON — recon results, new links, true counts. '+
+ 'Apply re-renders the whole board instantly. Export before big changes.</div>'+
+ '<textarea id="lvBox" spellcheck="false"></textarea>'+
+ '<div class="lv-row"><button class="lv-btn" id="lvApply">Apply to the board</button>'+
+ '<button class="lv-btn ghost" id="lvExport">Export JSON</button>'+
+ '<button class="lv-btn ghost" id="lvImport">Import file</button>'+
+ '<button class="lv-btn ghost" id="lvReset">Restore original</button>'+
+ '<button class="lv-btn ghost" id="lvPass">Change the word</button></div>'+
+ '<div class="lv-msg" id="lvMsg"></div><input type="file" id="lvFile" accept=".json" style="display:none"></div>';
+document.body.appendChild(ovr);
+const msg=(t,err)=>{const m=document.getElementById("lvMsg");m.textContent=t;m.className="lv-msg"+(err?" err":"")};
+function rerender(){try{renderBoard("all")}catch(e){}drawSeen();}
+function mutate(j){MINDS.length=0;j.minds.forEach(x=>MINDS.push(x));
+ FLAGS.length=0;j.flags.forEach(x=>FLAGS.push(x));}
+key.addEventListener("click",()=>{const p=prompt("The Seer's word:");if(p===null)return;
+ if(p!==pass()){alert("That is not the word of the house.");return}
+ document.getElementById("lvBox").value=JSON.stringify({minds:MINDS,flags:FLAGS},null,1);
+ msg("");ovr.classList.add("open");});
+document.getElementById("lvX").addEventListener("click",()=>ovr.classList.remove("open"));
+ovr.addEventListener("click",e=>{if(e.target===ovr)ovr.classList.remove("open")});
+document.getElementById("lvApply").addEventListener("click",()=>{
+ try{const j=JSON.parse(document.getElementById("lvBox").value);
+  if(!Array.isArray(j.minds)||!Array.isArray(j.flags))throw new Error("needs minds[] and flags[]");
+  mutate(j);lset("lv_override",JSON.stringify(j));rerender();
+  msg("Applied. The board is rendered from the new ledger.");}
+ catch(err){msg("Not applied — "+err.message,true)}});
+document.getElementById("lvExport").addEventListener("click",()=>{
+ const b=new Blob([JSON.stringify({minds:MINDS,flags:FLAGS},null,2)],{type:"application/json"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(b);
+ a.download="council-ledger-"+new Date().toISOString().slice(0,10)+".json";a.click();
+ msg("Exported. Keep it in the vault.")});
+document.getElementById("lvImport").addEventListener("click",()=>document.getElementById("lvFile").click());
+document.getElementById("lvFile").addEventListener("change",e=>{
+ const f=e.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{document.getElementById("lvBox").value=r.result;msg("Loaded into the editor — review, then Apply.")};
+ r.readAsText(f)});
+document.getElementById("lvReset").addEventListener("click",()=>{
+ if(!confirm("Restore the original forged ledger? Edits on this device will be cleared."))return;
+ try{localStorage.removeItem("lv_override")}catch(e){}location.reload();});
+document.getElementById("lvPass").addEventListener("click",()=>{
+ const np=prompt("New word of the house:");
+ if(np&&np.length>=4){lset(PK,np);msg("The word is changed on this device.")}
+ else msg("Not changed — four letters or more.",true)});
+
+/* ── boot: stored truth wins, then first paint ── */
+try{const o=lget("lv_override");if(o){const j=JSON.parse(o);
+ if(Array.isArray(j.minds)&&Array.isArray(j.flags)){mutate(j);renderBoard("all");}}}catch(e){}
+drawSeen();
+const foot=document.createElement("div");foot.className="lv-foot";
+foot.textContent="⚡ LEVIATHAN LAYER v1.1 · ADDITIVE · THE ORIGINAL STONE UNTOUCHED BENEATH";
+document.body.appendChild(foot);
+}catch(e){console.warn("Leviathan layer stood down safely:",e)}
+})();
+</script>
+
 </body>
 </html>
